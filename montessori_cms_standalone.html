@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montessori Multisite CMS - Standalone</title>
+    <!-- CSS & Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Scripts -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FAF9F6; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .card-shadow { box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05); }
+        input:focus, textarea:focus { border-color: #5A5A40; box-shadow: 0 0 0 4px rgba(90, 90, 64, 0.05); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #FAF9F6; }
+        ::-webkit-scrollbar-thumb { background: #E5E2D9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #A5A299; }
+    </style>
+</head>
+<body class="text-gray-900 overflow-x-hidden">
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect, useMemo } = React;
+        const { motion, AnimatePresence } = FramerMotion;
+
+        // --- MOCK DATA ---
+        const SITES = {
+            brightonview: {
+                id: "brightonview",
+                name: "Brighton View Montessori",
+                colors: { primary: "#30AADD" },
+                homepage: {
+                    heroTitle: "A Natural Way to Learn",
+                    welcomeText: "Located in the heart of our community, Brighton View offers a serene and engaging environment.",
+                    imageUrl: "https://images.unsplash.com/photo-1540479859555-17af430c0b40?auto=format&fit=crop&q=80&w=1200"
+                }
+            },
+            parkview: {
+                id: "parkview",
+                name: "Parkview Montessori",
+                colors: { primary: "#5A5A40" },
+                homepage: {
+                    heroTitle: "Inspiring Future Leaders",
+                    welcomeText: "Parkview Montessori provides a modern, bright facility right next to the park.",
+                    imageUrl: "https://images.unsplash.com/photo-1502086223501-7ea2442d42df?auto=format&fit=crop&q=80&w=1200"
+                }
+            }
+        };
+
+        const SHARED = {
+            philosophy: {
+                title: "Philosophy & Method",
+                mission: "To inspire human potential and nurture a lifelong love of learning within an inclusive community.",
+                content: "Our approach honors each child's unique journey. Dr. Maria Montessori believed that children learn best in an environment prepared with beauty and order."
+            }
+        };
+
+        // --- COMPONENTS ---
+
+        const LucideIcon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, [name]);
+            return React.createElement('i', { 
+                'data-lucide': name.toLowerCase(), 
+                style: { width: size, height: size },
+                className: `inline-block ${className}` 
+            });
+        };
+
+        function App() {
+            const [currentSiteId, setSiteId] = useState('brightonview');
+            const [activeSection, setActiveSection] = useState('philosophy');
+            const [showSwitcher, setShowSwitcher] = useState(false);
+            const [saveStatus, setSaveStatus] = useState(null);
+
+            const site = SITES[currentSiteId];
+
+            const triggerSave = () => {
+                setSaveStatus('Syncing changes...');
+                setTimeout(() => setSaveStatus('Deployed to Live Network!'), 1500);
+                setTimeout(() => setSaveStatus(null), 4000);
+            };
+
+            const NavItem = ({ id, icon, label, shared }) => {
+                const active = activeSection === id;
+                return React.createElement('button', {
+                    onClick: () => setActiveSection(id),
+                    className: `w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
+                        active 
+                        ? 'text-white shadow-xl translate-x-1' 
+                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                    }`,
+                    style: active ? { backgroundColor: site.colors.primary } : {}
+                }, 
+                    React.createElement(LucideIcon, { name: icon, size: 16 }),
+                    React.createElement('span', null, label)
+                );
+            };
+
+            return React.createElement('div', { className: 'min-h-screen flex' },
+                // --- SIDEBAR ---
+                React.createElement('aside', { className: 'hidden md:flex w-72 h-screen bg-white border-r border-[#E5E2D9] p-8 flex-col fixed z-30' },
+                    React.createElement('div', { className: 'mb-12' },
+                        React.createElement('div', { className: 'flex items-center gap-2 mb-1' },
+                            React.createElement('div', { className: 'w-2 h-2 rounded-full', style: { backgroundColor: site.colors.primary } }),
+                            React.createElement('h2', { className: 'font-black text-gray-900 text-xs uppercase tracking-widest' }, 'Montessori')
+                        ),
+                        React.createElement('p', { className: 'text-[10px] font-bold text-[#A5A299] uppercase tracking-[0.2em]' }, 'Master Control')
+                    ),
+                    
+                    React.createElement('div', { className: 'flex flex-col gap-1' },
+                        React.createElement('p', { className: 'px-4 text-[9px] font-extrabold text-[#A5A299] uppercase tracking-widest mb-3' }, 'Global Assets'),
+                        React.createElement(NavItem, { id: 'programs', icon: 'GraduationCap', label: 'Programs' }),
+                        React.createElement(NavItem, { id: 'philosophy', icon: 'Sparkles', label: 'Philosophy' }),
+                        
+                        React.createElement('div', { className: 'h-px bg-[#F0EEE6] my-8' }),
+                        
+                        React.createElement('p', { className: 'px-4 text-[9px] font-extrabold text-[#A5A299] uppercase tracking-widest mb-3' }, 'Campus Data'),
+                        React.createElement(NavItem, { id: 'homepage', icon: 'Home', label: 'Home Page' }),
+                        React.createElement(NavItem, { id: 'staff', icon: 'Users', label: 'Our Guides' })
+                    )
+                ),
+
+                // --- MAIN ---
+                React.createElement('main', { className: 'flex-1 md:ml-72 min-h-screen' },
+                    // TOP BAR
+                    React.createElement('header', { className: 'h-20 bg-white/70 backdrop-blur-xl border-b border-[#E5E2D9] sticky top-0 px-8 flex items-center justify-between z-20' },
+                        React.createElement('div', { className: 'relative' },
+                            React.createElement('button', {
+                                onClick: () => setShowSwitcher(!showSwitcher),
+                                className: 'flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-all font-bold text-sm text-gray-700'
+                            }, 
+                                site.name, 
+                                React.createElement(LucideIcon, { name: 'ChevronDown', size: 14, className: `transition-transform ${showSwitcher ? 'rotate-180' : ''}` })
+                            ),
+                            showSwitcher && React.createElement('div', { className: 'absolute top-full left-0 mt-3 w-72 bg-white border border-[#E5E2D9] rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-300' },
+                                Object.values(SITES).map(s => React.createElement('button', {
+                                    key: s.id,
+                                    onClick: () => { setSiteId(s.id); setShowSwitcher(false); },
+                                    className: `w-full text-left px-4 py-3 rounded-xl text-sm transition-colors ${currentSiteId === s.id ? 'bg-[#F9F8F3] font-bold text-[#5A5A40]' : 'hover:bg-gray-50 text-gray-600'}`
+                                }, s.name))
+                            )
+                        ),
+                        React.createElement('button', {
+                            onClick: triggerSave,
+                            className: 'px-8 py-3 rounded-full text-xs font-black text-white shadow-xl active:scale-95 transition-all flex items-center gap-2',
+                            style: { backgroundColor: site.colors.primary }
+                        }, React.createElement(LucideIcon, { name: 'Zap', size: 12 }), 'DEPLOY CHANGES')
+                    ),
+
+                    // CONTENT
+                    React.createElement('div', { className: 'p-12 max-w-5xl mx-auto' },
+                        React.createElement('div', { className: 'mb-12' },
+                            React.createElement('div', { className: 'flex items-center gap-2 text-[10px] font-black text-[#A5A299] uppercase tracking-[0.3em] mb-4' }, 
+                                React.createElement(LucideIcon, { name: 'Globe', size: 10 }),
+                                (['programs', 'philosophy'].includes(activeSection) ? 'Global Network Setting' : `Campus Unit: ${site.name}`)
+                            ),
+                            React.createElement('h1', { className: 'text-6xl font-serif italic text-gray-900 capitalize' }, activeSection)
+                        ),
+
+                        saveStatus && React.createElement('div', { className: 'mb-8 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-3 text-green-700 font-bold text-xs' },
+                            React.createElement(LucideIcon, { name: 'CheckCircle', size: 16 }),
+                            saveStatus
+                        ),
+
+                        activeSection === 'philosophy' && React.createElement('div', { className: 'space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500' },
+                            React.createElement('div', { className: 'bg-white p-10 rounded-[3rem] card-shadow border border-[#E5E2D9] space-y-8' },
+                                React.createElement('div', null,
+                                    React.createElement('label', { className: 'block text-[10px] font-black uppercase text-[#A5A299] tracking-widest mb-4' }, 'Section Headline'),
+                                    React.createElement('input', { 
+                                        className: 'w-full text-3xl font-serif italic bg-[#FAF9F6] border border-[#EBE9E0] rounded-[2rem] px-8 py-6 outline-none transition-all',
+                                        defaultValue: SHARED.philosophy.title
+                                    })
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('label', { className: 'block text-[10px] font-black uppercase text-[#A5A299] tracking-widest mb-4' }, 'Narrative Lead'),
+                                    React.createElement('textarea', { 
+                                        rows: 6,
+                                        className: 'w-full text-lg leading-relaxed text-gray-600 bg-[#FAF9F6] border border-[#EBE9E0] rounded-[2rem] px-8 py-6 outline-none transition-all',
+                                        defaultValue: SHARED.philosophy.content
+                                    })
+                                )
+                            )
+                        ),
+
+                        activeSection === 'homepage' && React.createElement('div', { className: 'space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500' },
+                            React.createElement('div', { className: 'bg-white p-10 rounded-[3rem] card-shadow border border-[#E5E2D9] space-y-8' },
+                                React.createElement('div', { className: 'relative h-64 rounded-[2.5rem] overflow-hidden group' },
+                                    React.createElement('img', { src: site.homepage.imageUrl, className: 'w-full h-full object-cover transition-transform duration-700 group-hover:scale-105' }),
+                                    React.createElement('div', { className: 'absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity' },
+                                        React.createElement('button', { className: 'px-8 py-3 bg-white rounded-full text-xs font-black uppercase tracking-widest' }, 'Change Campus Photo')
+                                    )
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('label', { className: 'block text-[10px] font-black uppercase text-[#A5A299] tracking-widest mb-4' }, 'Hero Headline'),
+                                    React.createElement('input', { 
+                                        className: 'w-full text-3xl font-serif italic bg-[#FAF9F6] border border-[#EBE9E0] rounded-[2rem] px-8 py-6 outline-none transition-all',
+                                        defaultValue: site.homepage.heroTitle
+                                    })
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>

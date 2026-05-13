@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montessori Multisite CMS - Standalone</title>
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #E5E2D9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #A5A299; }
+    </style>
+</head>
+<body class="bg-[#FAF9F6] text-gray-900">
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect, useMemo } = React;
+        const { motion, AnimatePresence } = FramerMotion;
+
+        // --- DATA ---
+        const INITIAL_SHARED_CONTENT = {
+            programs: [
+                { 
+                    title: "Infant & Toddler", 
+                    subtitle: "Ages 18 months - 3 years",
+                    content: "A nurturing environment for the smallest explorers, focused on building trust, independence, and sensory development.",
+                    icon: "Heart",
+                    schedule: [
+                        { time: "8:00 AM", activity: "Morning Welcome" },
+                        { time: "9:00 AM", activity: "Work Cycle" },
+                        { time: "11:30 AM", activity: "Outdoor Play" }
+                    ]
+                },
+                { 
+                    title: "Primary (3-6 Years)", 
+                    subtitle: "The Iconic Montessori Classroom",
+                    content: "Children develop concentration, coordination, and independence through hands-on work with specialized materials.",
+                    icon: "GraduationCap",
+                    schedule: [
+                        { time: "8:30 AM", activity: "Individual Work" },
+                        { time: "11:00 AM", activity: "Circle Time" }
+                    ]
+                }
+            ],
+            philosophy: {
+                title: "Philosophy & Method",
+                mission: "To inspire human potential and nurture a lifelong love of learning.",
+                content: "Our approach honors each child's unique journey. Dr. Maria Montessori believed that children learn best in an environment prepared with beauty and order.",
+                coreValues: [
+                    { title: "Respect", desc: "For oneself, others, and the environment." },
+                    { title: "Independence", desc: "Encouraging children to 'do it themselves'." }
+                ],
+                pillars: [
+                    { title: "Prepared Environment", desc: "Classrooms designed for the child.", icon: "Layers" },
+                    { title: "Multi-Age Play", desc: "Learning from peers.", icon: "Users" }
+                ]
+            },
+            admissions: {
+                title: "Join Our Community",
+                content: "We welcome families who seek a progressive, child-centered education.",
+                steps: [
+                    { step: 1, detail: "Schedule a private tour of our campus." },
+                    { step: 2, detail: "Submit your application for enrollment." }
+                ],
+                faqs: [
+                    { q: "What are your enrollment dates?", a: "We have rolling admissions throughout the year." }
+                ],
+                tuition: [
+                    { tier: "Full Day", price: "$1,800/mo", details: "7:30 AM - 6:00 PM" },
+                    { tier: "Half Day", price: "$1,200/mo", details: "8:30 AM - 12:30 PM" }
+                ]
+            },
+            careers: {
+                title: "Join Our Faculty",
+                content: "We are always looking for passionate educators.",
+                benefits: ["Full Health Insurance", "Retirement 401k"],
+                testimonials: [
+                    { quote: "Working here has changed my approach to child development.", author: "Ms. Linda, Lead Guide" }
+                ]
+            }
+        };
+
+        const INITIAL_SITES = {
+            brightonview: {
+                id: "brightonview",
+                name: "Brighton View Montessori",
+                colors: { primary: "#30AADD" },
+                contact: {
+                    address: "123 Brighton St, City, ST 12345",
+                    phone: "(555) 123-4567",
+                    hours: "Mon-Fri: 7:30 AM - 6:00 PM"
+                },
+                homepage: {
+                    heroTitle: "A Natural Way to Learn",
+                    welcomeText: "Located in the heart of our community, Brighton View offers a serene environment.",
+                    imageUrl: "https://images.unsplash.com/photo-1540479859555-17af430c0b40?auto=format&fit=crop&q=80&w=1200",
+                    stats: [{ label: "Teacher Ratio", value: "8:1" }],
+                    testimonials: [{ author: "Parents of Leo", text: "We love the focus on independence." }]
+                }
+            },
+            parkview: {
+                id: "parkview",
+                name: "Parkview Montessori",
+                colors: { primary: "#5A5A40" },
+                contact: {
+                    address: "456 Parkview Ln, City, ST 67890",
+                    phone: "(555) 987-6543",
+                    hours: "Mon-Fri: 8:00 AM - 5:30 PM"
+                },
+                homepage: {
+                    heroTitle: "Inspiring Future Leaders",
+                    welcomeText: "Parkview emphasizes nature-based learning right next to the park.",
+                    imageUrl: "https://images.unsplash.com/photo-1502086223501-7ea2442d42df?auto=format&fit=crop&q=80&w=1200",
+                    stats: [{ label: "Acreage", value: "2.5" }],
+                    testimonials: [{ author: "The Miller Family", text: "Having the park next door is an adventure." }]
+                }
+            }
+        };
+
+        // --- COMPONENTS ---
+
+        const Icon = ({ name, className }) => {
+            return React.createElement('i', { 
+                'data-lucide': name.toLowerCase(), 
+                className: className 
+            });
+        };
+
+        function App() {
+            const [currentSiteId, setSiteId] = useState('brightonview');
+            const [activeSection, setActiveSection] = useState('philosophy');
+            const [sharedContent, setSharedContent] = useState(INITIAL_SHARED_CONTENT);
+            const [sites, setSites] = useState(INITIAL_SITES);
+            const [saveStatus, setSaveStatus] = useState(null);
+            const [showSwitcher, setShowSwitcher] = useState(false);
+
+            useEffect(() => {
+                lucide.createIcons();
+            }, [activeSection, currentSiteId, showSwitcher]);
+
+            const currentSite = sites[currentSiteId];
+
+            const handleSave = () => {
+                setSaveStatus('Syncing with Network...');
+                setTimeout(() => setSaveStatus('Changes deployed successfully!'), 1500);
+                setTimeout(() => setSaveStatus(null), 4000);
+            };
+
+            const SidebarItem = ({ id, icon, label, isShared }) => {
+                const isActive = activeSection === id;
+                return React.createElement('button', {
+                    onClick: () => setActiveSection(id),
+                    className: `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive ? 'bg-[#5A5A40] text-white shadow-lg shadow-[#5A5A40]/30' : 'text-gray-500 hover:bg-gray-100'}`,
+                    style: isActive ? { backgroundColor: currentSite.colors.primary } : {}
+                }, 
+                    React.createElement(Icon, { name: icon, className: `w-4 h-4 ${isActive ? 'text-white' : 'text-gray-400'}` }),
+                    React.createElement('span', { className: 'truncate' }, label)
+                );
+            };
+
+            return React.createElement('div', { className: 'min-h-screen bg-[#FAF9F6] flex font-sans' },
+                // Sidebar
+                React.createElement('aside', { className: 'hidden md:flex w-64 border-r border-[#E5E2D9] bg-white p-6 flex flex-col fixed h-full z-20 overflow-y-auto' },
+                    React.createElement('div', { className: 'flex items-center gap-3 px-2 mb-10' },
+                        React.createElement('div', null,
+                            React.createElement('h2', { className: 'font-bold text-gray-900 text-sm tracking-tight uppercase' }, 'Montessori'),
+                            React.createElement('p', { className: 'text-[10px] uppercase font-bold text-[#A5A299] tracking-widest' }, 'Network Admin')
+                        )
+                    ),
+                    React.createElement('div', { className: 'flex flex-col gap-1' },
+                        React.createElement('p', { className: 'px-4 text-[10px] font-extrabold uppercase text-[#A5A299] tracking-[0.25em] mb-4' }, 'Shared Assets'),
+                        React.createElement(SidebarItem, { id: 'programs', icon: 'GraduationCap', label: 'Programs' }),
+                        React.createElement(SidebarItem, { id: 'philosophy', icon: 'FileText', label: 'Philosophy' }),
+                        React.createElement(SidebarItem, { id: 'admissions', icon: 'CalendarDays', label: 'Admissions' }),
+                        React.createElement('div', { className: 'h-px bg-[#F0EEE6] my-8 mx-4' }),
+                        React.createElement('p', { className: 'px-4 text-[10px] font-extrabold uppercase text-[#A5A299] tracking-[0.25em] mb-4' }, 'Campus Data'),
+                        React.createElement(SidebarItem, { id: 'homepage', icon: 'Layout', label: 'Homepage' }),
+                        React.createElement(SidebarItem, { id: 'contact', icon: 'Phone', label: 'Contact' })
+                    )
+                ),
+
+                // Main
+                React.createElement('main', { className: 'md:ml-64 pt-16 flex-1 min-h-screen' },
+                    // Header
+                    React.createElement('header', { className: 'fixed top-0 md:left-64 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-[#E5E2D9] px-8 flex items-center justify-between z-10' },
+                        React.createElement('div', { className: 'relative' },
+                            React.createElement('button', {
+                                onClick: () => setShowSwitcher(!showSwitcher),
+                                className: 'flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-lg transition-all group font-bold text-sm'
+                            }, currentSite.name, React.createElement(Icon, { name: 'ChevronDown', className: `w-4 h-4 transition-transform ${showSwitcher ? 'rotate-180' : ''}` })),
+                            showSwitcher && React.createElement('div', { className: 'absolute top-full left-0 mt-2 w-64 bg-white border border-[#E5E2D9] rounded-xl shadow-2xl p-2 z-50' },
+                                Object.values(INITIAL_SITES).map(site => React.createElement('button', {
+                                    key: site.id,
+                                    onClick: () => { setSiteId(site.id); setShowSwitcher(false); },
+                                    className: `w-full text-left px-3 py-2 rounded-lg text-sm ${currentSiteId === site.id ? 'bg-[#F9F8F3] font-bold text-[#5A5A40]' : 'hover:bg-gray-50 text-gray-700'}`
+                                }, site.name))
+                            )
+                        ),
+                        React.createElement('button', {
+                            onClick: handleSave,
+                            className: 'bg-[#5A5A40] text-white px-6 py-2 rounded-full text-xs font-bold shadow-xl flex items-center gap-2',
+                            style: { backgroundColor: currentSite.colors.primary }
+                        }, React.createElement(Icon, { name: 'Save', className: 'w-3 h-3' }), 'Sync Site')
+                    ),
+
+                    // Content
+                    React.createElement('div', { className: 'p-12 max-w-5xl mx-auto' },
+                        React.createElement('div', { className: 'mb-12' },
+                            React.createElement('div', { className: 'flex items-center gap-2 text-[10px] font-extrabold text-[#5A5A40] uppercase tracking-[0.3em] mb-4' }, 
+                                React.createElement(Icon, { name: 'Globe', className: 'w-3 h-3' }), 
+                                (['programs', 'philosophy', 'admissions'].includes(activeSection) ? 'Shared Network Asset' : `Campus Unit: ${currentSite.name}`)
+                            ),
+                            React.createElement('h1', { className: 'text-5xl font-serif italic text-gray-900 capitalize' }, activeSection)
+                        ),
+
+                        saveStatus && React.createElement('p', { className: 'text-xs font-bold text-green-600 mb-6 flex items-center gap-2' }, React.createElement(Icon, { name: 'Check', className: 'w-3 h-3' }), saveStatus),
+
+                        React.createElement('div', { className: 'bg-white p-10 rounded-[2.5rem] border border-[#E5E2D9] shadow-sm space-y-8' },
+                            activeSection === 'philosophy' && React.createElement('div', { className: 'space-y-6' },
+                                React.createElement('div', null,
+                                    React.createElement('label', { className: 'block text-[10px] font-extrabold uppercase text-[#A5A299] mb-3' }, 'Master Headline'),
+                                    React.createElement('input', { className: 'w-full text-2xl font-serif italic bg-[#FAF9F6] border border-[#EBE9E0] rounded-2xl px-6 py-4 outline-none', defaultValue: sharedContent.philosophy.title })
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('label', { className: 'block text-[10px] font-extrabold uppercase text-[#A5A299] mb-3' }, 'Narrative Content'),
+                                    React.createElement('textarea', { rows: 5, className: 'w-full text-gray-600 bg-[#FAF9F6] border border-[#EBE9E0] rounded-2xl px-6 py-4 outline-none', defaultValue: sharedContent.philosophy.content })
+                                )
+                            ),
+                            activeSection === 'homepage' && React.createElement('div', { className: 'space-y-6' },
+                                React.createElement('div', null,
+                                    React.createElement('label', { className: 'block text-[10px] font-extrabold uppercase text-[#A5A299] mb-3' }, 'Campus Welcome Statement'),
+                                    React.createElement('input', { className: 'w-full text-2xl font-serif italic bg-[#FAF9F6] border border-[#EBE9E0] rounded-2xl px-6 py-4 outline-none', defaultValue: currentSite.homepage.heroTitle })
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('img', { src: currentSite.homepage.imageUrl, className: 'w-full h-48 object-cover rounded-2xl mb-4 border border-[#EBE9E0]' }),
+                                    React.createElement('button', { className: 'w-full py-4 border-2 border-dashed border-[#EBE9E0] rounded-2xl text-[10px] font-bold text-gray-400 uppercase tracking-widest' }, 'Replace Campus Hero Image')
+                                )
+                            )
+                            // ... other sections would go here similarly
+                        )
+                    )
+                )
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>

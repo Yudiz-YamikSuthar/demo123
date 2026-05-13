@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montessori Multisite CMS - Portable</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.474.0/dist/umd/lucide.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .bg-soft { background-color: #FAF9F6; }
+    </style>
+</head>
+<body class="bg-soft text-gray-900">
+    <div id="root"></div>
+
+    <script>
+        // DATA BUNDLED FROM multisite.ts
+        const SHARED_CONTENT = {
+            programs: [
+                { title: "Infant & Toddler", subtitle: "Ages 18 months - 3 years", content: "A nurturing environment for the smallest explorers...", icon: "Heart" },
+                { title: "Primary (3-6 Years)", subtitle: "The Iconic Montessori Classroom", content: "Children develop concentration, coordination...", icon: "GraduationCap" },
+                { title: "Elementary", subtitle: "A Cosmic Education", content: "Expanding curiosity through a curriculum...", icon: "BookOpen" }
+            ],
+            philosophy: {
+                title: "Philosophy & Method",
+                mission: "To inspire human potential and nurture a lifelong love of learning...",
+                content: "Our approach honors each child's unique journey...",
+                coreValues: [
+                    { title: "Respect", desc: "For oneself, others, and the environment." },
+                    { title: "Independence", desc: "Encouraging children to 'do it themselves'." },
+                    { title: "Community", desc: "Fostering collaboration across age groups." }
+                ],
+                pillars: [
+                    { title: "Prepared Environment", desc: "Classrooms designed for the child.", icon: "Layers" },
+                    { title: "Multi-Age Play", desc: "Learning from peers of different ages.", icon: "Users" },
+                    { title: "The Guide", desc: "Teachers who observe and facilitate.", icon: "Search" }
+                ]
+            }
+        };
+
+        const SITES = {
+            brightonview: {
+                name: "Brighton View Montessori",
+                colors: { primary: "#30AADD" }
+            },
+            parkview: {
+                name: "Parkview Montessori",
+                colors: { primary: "#30AADD" }
+            }
+        };
+
+        // MINIMAL PORTABLE UI
+        function App() {
+            const [site, setSite] = React.useState('brightonview');
+            
+            return React.createElement('div', { className: 'p-12 max-w-4xl mx-auto' },
+                React.createElement('h1', { className: 'text-4xl font-serif italic mb-8' }, 'Portable CMS Viewer'),
+                React.createElement('div', { className: 'flex gap-4 mb-12' },
+                    React.createElement('button', { 
+                        onClick: () => setSite('brightonview'),
+                        className: `px-6 py-2 rounded-full border ${site === 'brightonview' ? 'bg-[#5A5A40] text-white' : 'bg-white'}`
+                    }, 'Brighton View'),
+                    React.createElement('button', { 
+                        onClick: () => setSite('parkview'),
+                        className: `px-6 py-2 rounded-full border ${site === 'parkview' ? 'bg-[#5A5A40] text-white' : 'bg-white'}`
+                    }, 'Parkview')
+                ),
+                React.createElement('div', { className: 'bg-white p-8 rounded-3xl shadow-sm border border-gray-200' },
+                    React.createElement('h2', { className: 'text-2xl font-serif italic mb-4' }, SITES[site].name),
+                    React.createElement('p', { className: 'text-gray-500' }, 'This is a portable static version of the CMS. For full functionality, please use the main application.')
+                )
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>

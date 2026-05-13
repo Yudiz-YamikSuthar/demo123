@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montessori Network Admin - Final Standalone</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.410.0/dist/umd/lucide.min.js"></script>
+    <script src="https://unpkg.com/lucide-react@0.410.0/dist/umd/lucide-react.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FAF9F6; color: #111827; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #E5E2D9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5A5A40; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+
+        #root:empty { background: #FAF9F6; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        #root:empty::after { content: 'Loading Montessori Admin...'; font-family: 'Playfair Display', serif; font-style: italic; color: #A5A299; font-size: 1.25rem; }
+        
+        input, textarea {
+            @apply focus:ring-1 focus:ring-[#5A5A40] focus:border-[#5A5A40] transition-all duration-200 outline-none;
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+        const { motion, AnimatePresence } = FramerMotion;
+        
+        // Lucide Icons extraction
+        const Lucide = LucideReact;
+        const { 
+            Network, Layout, Users, FileText, Settings, Save, ExternalLink, 
+            ChevronRight, Info, Layers, Palette, Globe, Bell, Search, 
+            Plus, Image, Clock, ChevronDown, GraduationCap, Briefcase, 
+            CalendarDays, Phone, Heart, BookOpen, Trash2, Mail, MapThumb, MoreHorizontal
+        } = Lucide;
+
+        // --- MASTER DATA ---
+        const INITIAL_SHARED = {
+            philosophy: {
+                title: "Philosophy & Method",
+                mission: "To inspire human potential and nurture a lifelong love of learning within an inclusive, diverse community.",
+                content: "Our approach honors each child's unique journey. Dr. Maria Montessori believed that children learn best in an environment prepared with beauty and order, allowing them to follow their natural curiosity through meaningful work.",
+                coreValues: [
+                    { title: "Respect", desc: "For oneself, others, and the global environment." },
+                    { title: "Independence", desc: "Empowering children to take ownership of their learning." },
+                    { title: "Community", desc: "Creating a sense of belonging across multi-age classrooms." }
+                ]
+            },
+            programs: [
+                { 
+                    title: "Infant & Toddler", 
+                    subtitle: "Ages 18 months - 3 years",
+                    content: "A nurturing environment for the smallest explorers, focused on building trust, independence, and sensory development.",
+                    schedule: [
+                        { time: "8:00 AM", activity: "Morning Arrival & Transition" },
+                        { time: "9:00 AM", activity: "Individual Work Cycle" },
+                        { time: "11:30 AM", activity: "Outdoor Garden Play" }
+                    ]
+                },
+                { 
+                    title: "Primary Classroom", 
+                    subtitle: "3 - 6 Years",
+                    content: "The heart of the Montessori method. Children work with language, math, and practical life materials in a sun-drenched space.",
+                    schedule: [
+                        { time: "8:30 AM", activity: "Three-Hour Work Period" },
+                        { time: "11:30 AM", activity: "Circle Time & Music" }
+                    ]
+                }
+            ],
+            admissions: {
+                title: "Admissions Process",
+                content: "We welcome families who seek a progressive, child-centered education. Our process ensures a mutual fit between the family and our school culture.",
+                steps: [
+                    { step: 1, detail: "Private School Tour & Observation" },
+                    { step: 2, detail: "Online Application Submission" },
+                    { step: 3, detail: "Family Interview with Director" }
+                ],
+                tuition: [
+                    { tier: "Toddler Full Day", price: "$1,850/mo", details: "7:30 AM - 6:00 PM" },
+                    { tier: "Primary Half Day", price: "$1,250/mo", details: "8:30 AM - 12:30 PM" }
+                ]
+            },
+            careers: {
+                title: "Join Our Faculty",
+                content: "We are always looking for passionate educators dedicated to the Montessori vision. We offer professional development and a collaborative atmosphere.",
+                benefits: ["Full Medical & Dental", "401k Retirement Plan", "Tuition Discount for Children", "Paid Sabbaticals"],
+                openings: [
+                    { title: "Lead Primary Guide", type: "Full-Time" },
+                    { title: "Assistant Toddler Guide", type: "Full-Time" }
+                ]
+            }
+        };
+
+        const INITIAL_SITES = {
+            brightonview: {
+                id: "brightonview",
+                name: "Brighton View Montessori",
+                color: "#30AADD",
+                heroTitle: "A Natural Way to Learn",
+                welcomeText: "Nestled in the heart of our community, Brighton View offers a serene and engaging environment where children are free to explore.",
+                imageUrl: "https://images.unsplash.com/photo-1540479859555-17af430c0b40?auto=format&fit=crop&q=80&w=1200",
+                stats: [
+                    { label: "Teacher Ratio", value: "8:1" },
+                    { label: "Capacity", value: "140" }
+                ],
+                staff: [
+                    { name: "Sarah Johnson", role: "School Director", bio: "Sarah has 15 years experience in progressive education.", imageUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400" },
+                    { name: "Ms. Elena", role: "Lead Primary Guide", bio: "Elena specializes in sensory-based math instruction.", imageUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400" }
+                ],
+                contact: {
+                    address: "123 Brighton St, City, ST 12345",
+                    phone: "(555) 123-4567",
+                    email: "hello@brightonview.net",
+                    hours: "Mon-Fri: 7:30 AM - 6:00 PM"
+                },
+                photos: [
+                    { url: "https://images.unsplash.com/photo-1564429234817-393df4286b2d?auto=format&fit=crop&q=80&w=600", caption: "Our Main Entrance", category: "Exteriors" },
+                    { url: "https://images.unsplash.com/photo-1588075792225-7833a697669d?auto=format&fit=crop&q=80&w=600", caption: "Toddler Work Space", category: "Classrooms" }
+                ]
+            },
+            parkview: {
+                id: "parkview",
+                name: "Parkview Montessori",
+                color: "#3E5C76",
+                heroTitle: "Growing Leaders Daily",
+                welcomeText: "Parkview Montessori provides a modern, light-filled facility right next to the city park, emphasizing nature-based learning.",
+                imageUrl: "https://images.unsplash.com/photo-1502086223501-7ea2442d42df?auto=format&fit=crop&q=80&w=1200",
+                stats: [
+                    { label: "Acreage", value: "2.5" },
+                    { label: "Classrooms", value: "8" }
+                ],
+                staff: [
+                    { name: "Mr. Thomas", role: "Campus Manager", bio: "Thomas coordinates community outreach and facility upkeep.", imageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400" }
+                ],
+                contact: {
+                    address: "456 Parkview Ln, City, ST 67890",
+                    phone: "(555) 987-6543",
+                    email: "info@parkviewmontessori.net",
+                    hours: "Mon-Fri: 8:00 AM - 5:30 PM"
+                },
+                photos: [
+                    { url: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=600", caption: "Library Corner", category: "Classrooms" }
+                ]
+            }
+        };
+
+        // --- COMPONENTS ---
+        
+        const InputGroup = ({ label, value, onChange, type = "text", textarea = false }) => (
+            <div className="space-y-2">
+                <label className="text-[10px] font-bold text-[#A5A299] uppercase tracking-widest">{label}</label>
+                {textarea ? (
+                    <textarea 
+                        className="w-full bg-[#FAF9F6] border border-[#EBE9E0] rounded-xl px-4 py-3 text-sm leading-relaxed min-h-[100px]"
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                    />
+                ) : (
+                    <input 
+                        type={type}
+                        className="w-full bg-[#FAF9F6] border border-[#EBE9E0] rounded-xl px-4 py-3 text-sm outline-none"
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                    />
+                )}
+            </div>
+        );
+
+        const App = () => {
+            const [currentSiteId, setCurrentSiteId] = useState('brightonview');
+            const [activeSection, setActiveSection] = useState('philosophy');
+            const [siteSwitcherOpen, setSiteSwitcherOpen] = useState(false);
+            const [localShared, setLocalShared] = useState(INITIAL_SHARED);
+            const [localSites, setLocalSites] = useState(INITIAL_SITES);
+            const [status, setStatus] = useState(null);
+
+            const site = localSites[currentSiteId];
+
+            const notify = (msg) => {
+                setStatus(msg);
+                setTimeout(() => setStatus(null), 3000);
+            };
+
+            const handleSave = () => {
+                notify("Syncing with Master Network...");
+            };
+
+            const NavItem = ({ id, icon: Icon, label, colorClass }) => (
+                <button 
+                    onClick={() => setActiveSection(id)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group ${
+                        activeSection === id ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                >
+                    <Icon className={`w-4 h-4 ${activeSection === id ? 'text-white' : 'text-gray-400 group-hover:text-[#5A5A40]'}`} />
+                    <span>{label}</span>
+                </button>
+            );
+
+            return (
+                <div className="min-h-screen flex text-gray-900 bg-[#FAF9F6]">
+                    {/* Sidebar */}
+                    <aside className="w-64 bg-white border-r border-[#E5E2D9] p-6 fixed h-full flex flex-col z-30">
+                        <div className="mb-10 px-2 leading-none">
+                            <h2 className="font-bold text-gray-900 tracking-tight text-xl font-serif italic">Montessori</h2>
+                            <p className="text-[10px] font-bold text-[#A5A299] uppercase tracking-widest mt-1">Network Admin</p>
+                        </div>
+                        
+                        <div className="flex-1 space-y-1">
+                            <p className="text-[10px] font-bold text-[#A5A299] uppercase tracking-widest px-4 mb-3">Global Components</p>
+                            <NavItem id="philosophy" icon={FileText} label="Philosophy" />
+                            <NavItem id="programs" icon={GraduationCap} label="Programs" />
+                            <NavItem id="admissions" icon={CalendarDays} label="Admissions" />
+                            <NavItem id="careers" icon={Briefcase} label="Careers" />
+
+                            <div className="h-px bg-gray-100 my-6 mx-4" />
+
+                            <p className="text-[10px] font-bold text-[#A5A299] uppercase tracking-widest px-4 mb-3">Site Specifics</p>
+                            <NavItem id="homepage" icon={Layout} label="Landing Page" />
+                            <NavItem id="staff" icon={Users} label="Faculty Team" />
+                            <NavItem id="photos" icon={Image} label="Campus Gallery" />
+                            <NavItem id="contact" icon={Phone} label="Contact & Hours" />
+                        </div>
+
+                        <div className="mt-auto pt-6 border-t border-gray-100">
+                            <div className="bg-[#FAF9F6] p-4 rounded-2xl border border-[#EBE9E0] flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[#5A5A40] text-white flex items-center justify-center text-[10px] font-bold">AD</div>
+                                <div className="leading-none">
+                                    <p className="text-xs font-bold text-gray-700">Team Admin</p>
+                                    <p className="text-[10px] text-gray-400 mt-1">Network Lead</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Workspace */}
+                    <div className="flex-1 ml-64 flex flex-col">
+                        {/* Header */}
+                        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-[#E5E2D9] px-10 flex items-center justify-between sticky top-0 z-20">
+                            <div className="relative">
+                                <button 
+                                    onClick={() => setSiteSwitcherOpen(!siteSwitcherOpen)}
+                                    className="flex items-center gap-3 bg-white border border-[#EBE9E0] px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all group"
+                                >
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: site.color }}></div>
+                                    <span className="text-sm font-bold text-gray-800">{site.name}</span>
+                                    <ChevronDown className={`w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-transform ${siteSwitcherOpen ? 'rotate-180' : ''}`} />
+                                </button>
+                                
+                                <AnimatePresence>
+                                    {siteSwitcherOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setSiteSwitcherOpen(false)}></div>
+                                            <motion.div 
+                                                initial={{ opacity: 0, y: 10 }} 
+                                                animate={{ opacity: 1, y: 0 }} 
+                                                exit={{ opacity: 0 }} 
+                                                className="absolute top-full left-0 mt-3 w-64 bg-white border border-[#E5E2D9] rounded-2xl shadow-xl p-2 z-20"
+                                            >
+                                                {Object.values(localSites).map(s => (
+                                                    <button 
+                                                        key={s.id}
+                                                        onClick={() => { setCurrentSiteId(s.id); setSiteSwitcherOpen(false); }}
+                                                        className={`w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-colors ${currentSiteId === s.id ? 'bg-[#FAF9F6]' : 'hover:bg-gray-50'}`}
+                                                    >
+                                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }}></div>
+                                                        <span className={`text-sm ${currentSiteId === s.id ? 'font-bold text-[#5A5A40]' : 'text-gray-600'}`}>{s.name}</span>
+                                                    </button>
+                                                ))}
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            <div className="flex items-center gap-6">
+                                <AnimatePresence>
+                                    {status && (
+                                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="text-xs font-bold text-green-600 flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                                            {status}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                                <button 
+                                    onClick={handleSave}
+                                    className="bg-[#5A5A40] text-white px-8 py-3 rounded-full font-bold text-sm shadow-xl shadow-[#5A5A40]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                                    style={{ backgroundColor: site.color }}
+                                >
+                                    <Save className="w-4 h-4" />
+                                    Synchronize Network
+                                </button>
+                            </div>
+                        </header>
+
+                        {/* Content Area */}
+                        <main className="p-16 max-w-5xl mx-auto w-full">
+                            <div className="mb-14">
+                                <p className="text-[10px] font-bold text-[#5A5A40] uppercase tracking-[0.4em] mb-4">Configuration Panel</p>
+                                <h1 className="text-5xl font-serif italic text-gray-900 capitalize tracking-tight">{activeSection.replace('-', ' ')}</h1>
+                            </div>
+
+                            <motion.div 
+                                key={activeSection}
+                                initial={{ opacity: 0, y: 15 }} 
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4 }}
+                                className="space-y-10 pb-32"
+                            >
+                                {/* PHILOSOPHY */}
+                                {activeSection === 'philosophy' && (
+                                    <div className="bg-white p-12 rounded-[3rem] border border-[#E5E2D9] shadow-sm space-y-10">
+                                        <div className="flex items-center gap-4 border-b border-gray-100 pb-8">
+                                            <div className="w-12 h-12 bg-[#F9F8F3] rounded-2xl flex items-center justify-center text-[#5A5A40]"><FileText className="w-6 h-6" /></div>
+                                            <h3 className="text-2xl font-serif italic">Global Brand Narrative</h3>
+                                        </div>
+                                        <div className="grid gap-8">
+                                            <InputGroup label="Headline" value={localShared.philosophy.title} onChange={(val) => setLocalShared({ ...localShared, philosophy: { ...localShared.philosophy, title: val } })} />
+                                            <InputGroup label="Mission Statement" value={localShared.philosophy.mission} onChange={(val) => setLocalShared({ ...localShared, philosophy: { ...localShared.philosophy, mission: val } })} />
+                                            <InputGroup label="Main Content Body" textarea value={localShared.philosophy.content} onChange={(val) => setLocalShared({ ...localShared, philosophy: { ...localShared.philosophy, content: val } })} />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* PROGRAMS */}
+                                {activeSection === 'programs' && (
+                                    <div className="grid gap-8">
+                                        {localShared.programs.map((prog, i) => (
+                                            <div key={i} className="bg-white p-12 rounded-[3rem] border border-[#E5E2D9] shadow-sm space-y-8 relative overflow-hidden group">
+                                                <div className="flex justify-between items-start">
+                                                    <input className="text-3xl font-serif italic bg-transparent outline-none flex-1 text-gray-900 font-medium" value={prog.title} onChange={(e) => {
+                                                        const p = [...localShared.programs]; p[i].title = e.target.value;
+                                                        setLocalShared({ ...localShared, programs: p });
+                                                    }} />
+                                                    <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest px-4 py-1.5 border border-gray-100 rounded-full">{prog.subtitle}</span>
+                                                </div>
+                                                <textarea className="w-full text-gray-600 bg-[#FAF9F6] p-6 rounded-3xl border border-[#EBE9E0] outline-none text-sm leading-relaxed min-h-[100px]" value={prog.content} onChange={(e) => {
+                                                    const p = [...localShared.programs]; p[i].content = e.target.value;
+                                                    setLocalShared({ ...localShared, programs: p });
+                                                }} />
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 ">
+                                                    {prog.schedule.map((item, si) => (
+                                                        <div key={si} className="bg-[#FAF9F6] p-4 rounded-2xl border border-dashed border-[#EBE9E0]">
+                                                            <input className="text-[10px] font-bold text-[#5A5A40] bg-transparent outline-none mb-1 block" value={item.time} onChange={(e) => {
+                                                                const p = [...localShared.programs]; p[i].schedule[si].time = e.target.value;
+                                                                setLocalShared({ ...localShared, programs: p });
+                                                            }} />
+                                                            <input className="text-xs text-gray-500 bg-transparent outline-none block w-full" value={item.activity} onChange={(e) => {
+                                                                const p = [...localShared.programs]; p[i].schedule[si].activity = e.target.value;
+                                                                setLocalShared({ ...localShared, programs: p });
+                                                            }} />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <button className="py-8 border-2 border-dashed border-[#E5E2D9] rounded-[3rem] text-[10px] font-bold uppercase tracking-widest text-[#A5A299] hover:bg-white transition-all">+ Add Global Program Module</button>
+                                    </div>
+                                )}
+
+                                {/* ADMISSIONS */}
+                                {activeSection === 'admissions' && (
+                                    <div className="space-y-8">
+                                        <div className="bg-white p-12 rounded-[3rem] border border-[#E5E2D9] shadow-sm space-y-10">
+                                            <div className="flex items-center gap-4 border-b border-gray-100 pb-8">
+                                                <div className="w-12 h-12 bg-[#F9F8F3] rounded-2xl flex items-center justify-center text-[#5A5A40]"><CalendarDays className="w-6 h-6" /></div>
+                                                <h3 className="text-2xl font-serif italic">Admissions Flow</h3>
+                                            </div>
+                                            <InputGroup label="Headline" value={localShared.admissions.title} onChange={(val) => setLocalShared({...localShared, admissions: {...localShared.admissions, title: val}})} />
+                                            <InputGroup label="Overview Text" textarea value={localShared.admissions.content} onChange={(val) => setLocalShared({...localShared, admissions: {...localShared.admissions, content: val}})} />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="bg-white p-10 rounded-[2.5rem] border border-[#E5E2D9] shadow-sm">
+                                                <h4 className="text-lg font-serif italic mb-6 border-b border-gray-50 pb-4">Step-by-Step Process</h4>
+                                                <div className="space-y-4">
+                                                    {localShared.admissions.steps.map((s, i) => (
+                                                        <div key={i} className="flex gap-4 items-center bg-[#FAF9F6] p-4 rounded-2xl border border-[#EBE9E0]">
+                                                            <div className="w-8 h-8 rounded-full bg-[#5A5A40] text-white flex items-center justify-center text-xs font-bold leading-none shrink-0">{s.step}</div>
+                                                            <input className="bg-transparent text-sm text-gray-700 outline-none w-full" value={s.detail} onChange={(e) => {
+                                                                const steps = [...localShared.admissions.steps]; steps[i].detail = e.target.value;
+                                                                setLocalShared({...localShared, admissions: {...localShared.admissions, steps: steps}});
+                                                            }} />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="bg-white p-10 rounded-[2.5rem] border border-[#E5E2D9] shadow-sm">
+                                                <h4 className="text-lg font-serif italic mb-6 border-b border-gray-50 pb-4">Tuition Reference</h4>
+                                                <div className="space-y-4">
+                                                    {localShared.admissions.tuition.map((t, i) => (
+                                                        <div key={i} className="bg-[#FAF9F6] p-5 rounded-2xl border border-[#EBE9E0] flex justify-between items-center group transition-colors hover:bg-white group">
+                                                            <div className="space-y-1">
+                                                                <input className="font-serif italic text-sm font-medium bg-transparent outline-none block w-32" value={t.tier} onChange={(e) => {
+                                                                    const tu = [...localShared.admissions.tuition]; tu[i].tier = e.target.value;
+                                                                    setLocalShared({...localShared, admissions: {...localShared.admissions, tuition: tu}});
+                                                                }} />
+                                                                <input className="text-[9px] font-bold text-gray-400 uppercase bg-transparent outline-none" value={t.details} onChange={(e) => {
+                                                                    const tu = [...localShared.admissions.tuition]; tu[i].details = e.target.value;
+                                                                    setLocalShared({...localShared, admissions: {...localShared.admissions, tuition: tu}});
+                                                                }} />
+                                                            </div>
+                                                            <input className="font-mono text-lg font-bold text-[#5A5A40] bg-transparent outline-none w-24 text-right" value={t.price} onChange={(e) => {
+                                                                const tu = [...localShared.admissions.tuition]; tu[i].price = e.target.value;
+                                                                setLocalShared({...localShared, admissions: {...localShared.admissions, tuition: tu}});
+                                                            }} />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* CAREERS */}
+                                {activeSection === 'careers' && (
+                                    <div className="space-y-8">
+                                        <div className="bg-white p-12 rounded-[3rem] border border-[#E5E2D9] shadow-sm space-y-10">
+                                            <div className="flex items-center gap-4 border-b border-gray-100 pb-8">
+                                                <div className="w-12 h-12 bg-[#F9F8F3] rounded-2xl flex items-center justify-center text-[#5A5A40]"><Briefcase className="w-6 h-6" /></div>
+                                                <h3 className="text-2xl font-serif italic">Faculty Recruitment</h3>
+                                            </div>
+                                            <InputGroup label="Recruitment Narrative" textarea value={localShared.careers.content} onChange={(val) => setLocalShared({...localShared, careers: {...localShared.careers, content: val}})} />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="bg-white p-10 rounded-[2.5rem] border border-[#E5E2D9] shadow-sm">
+                                                <h4 className="text-lg font-serif italic mb-6 border-b border-gray-50 pb-4 text-gray-800">Available Openings</h4>
+                                                <div className="space-y-3">
+                                                    {localShared.careers.openings.map((job, i) => (
+                                                        <div key={i} className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#EBE9E0] flex justify-between items-center group hover:bg-white transition-all">
+                                                            <input className="text-sm font-bold text-gray-700 bg-transparent outline-none flex-1" value={job.title} onChange={(e) => {
+                                                                const o = [...localShared.careers.openings]; o[i].title = e.target.value;
+                                                                setLocalShared({...localShared, careers: {...localShared.careers, openings: o}});
+                                                            }} />
+                                                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{job.type}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="bg-white p-10 rounded-[2.5rem] border border-[#E5E2D9] shadow-sm">
+                                                <h4 className="text-lg font-serif italic mb-6 border-b border-gray-50 pb-4">Standard Benefits</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {localShared.careers.benefits.map((b, i) => (
+                                                        <div key={i} className="px-4 py-2 bg-[#FAF9F6] rounded-full border border-[#EBE9E0] flex items-center gap-2 group translate-all hover:border-[#5A5A40]">
+                                                            <input className="text-[10px] font-bold text-[#A5A299] bg-transparent outline-none uppercase tracking-widest w-24 focus:text-[#5A5A40]" value={b} onChange={(e) => {
+                                                                const ben = [...localShared.careers.benefits]; ben[i] = e.target.value;
+                                                                setLocalShared({...localShared, careers: {...localShared.careers, benefits: ben}});
+                                                            }} />
+                                                            <Trash2 className="w-3 h-3 text-gray-300 hover:text-red-400 cursor-pointer" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* HOMEPAGE */}
+                                {activeSection === 'homepage' && (
+                                    <div className="space-y-10">
+                                        <div className="bg-white p-12 rounded-[3.5rem] border border-[#E5E2D9] shadow-sm space-y-10 overflow-hidden relative">
+                                            <div className="flex items-center gap-4 pb-8 mb-4">
+                                                <div className="w-12 h-12 bg-[#F9F8F3] rounded-2xl flex items-center justify-center text-[#5A5A40]"><Layout className="w-6 h-6" /></div>
+                                                <h3 className="text-2xl font-serif italic">Hero Section: {site.name}</h3>
+                                            </div>
+                                            <div className="space-y-8">
+                                                <InputGroup label="Landing Title" value={site.heroTitle} onChange={(val) => setLocalSites({...localSites, [currentSiteId]: {...site, heroTitle: val}})} />
+                                                <InputGroup label="Welcome Message" textarea value={site.welcomeText} onChange={(val) => setLocalSites({...localSites, [currentSiteId]: {...site, welcomeText: val}})} />
+                                                <div className="space-y-4">
+                                                    <label className="text-[10px] font-bold text-[#A5A299] uppercase tracking-widest">Atmosphere Showcase</label>
+                                                    <div className="relative group rounded-[2.5rem] overflow-hidden border-8 border-white shadow-xl aspect-video transition-all hover:shadow-2xl">
+                                                        <img src={site.imageUrl} className="w-full h-full object-cover grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700 hover:scale-105" />
+                                                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                                                            <button className="bg-white text-gray-900 px-10 py-3 rounded-full font-bold text-xs uppercase tracking-widest shadow-2xl">Replace Hero Asset</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white p-10 rounded-[3rem] border border-[#E5E2D9] shadow-sm">
+                                            <h4 className="text-xl font-serif italic mb-8 border-b border-gray-50 pb-4">Campus Statistics</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {site.stats.map((s, i) => (
+                                                    <div key={i} className="bg-[#FAF9F6] p-6 rounded-[2rem] border border-[#EBE9E0] flex items-center gap-6 group hover:bg-white transition-all">
+                                                        <input className="text-3xl font-serif italic font-bold text-[#5A5A40] bg-transparent outline-none w-20 text-center" value={s.value} onChange={(e) => {
+                                                            const nStats = [...site.stats]; nStats[i].value = e.target.value;
+                                                            setLocalSites({...localSites, [currentSiteId]: {...site, stats: nStats}});
+                                                        }} />
+                                                        <input className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] bg-transparent outline-none flex-1" value={s.label} onChange={(e) => {
+                                                            const nStats = [...site.stats]; nStats[i].label = e.target.value;
+                                                            setLocalSites({...localSites, [currentSiteId]: {...site, stats: nStats}});
+                                                        }} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* STAFF */}
+                                {activeSection === 'staff' && (
+                                    <div className="bg-white p-12 rounded-[3.5rem] border border-[#E5E2D9] shadow-sm space-y-10">
+                                        <div className="flex justify-between items-center border-b border-gray-100 pb-8">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-[#F9F8F3] rounded-2xl flex items-center justify-center text-[#5A5A40]"><Users className="w-6 h-6" /></div>
+                                                <h3 className="text-2xl font-serif italic">Campus Faculty</h3>
+                                            </div>
+                                            <button className="bg-[#F9F8F3] text-[#5A5A40] px-6 py-2.5 rounded-full text-[10px] font-bold uppercase border border-[#EBE9E0] hover:bg-[#5A5A40] hover:text-white transition-all">+ Add Teacher</button>
+                                        </div>
+                                        <div className="grid gap-6">
+                                            {site.staff.map((member, i) => (
+                                                <div key={i} className="flex flex-col md:flex-row gap-8 p-10 bg-[#FAF9F6] rounded-[3rem] border border-[#EBE9E0] group hover:bg-white hover:shadow-2xl transition-all duration-500">
+                                                    <div className="relative shrink-0">
+                                                        <div className="w-32 h-32 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl transition-transform group-hover:scale-105">
+                                                            <img src={member.imageUrl} className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-700" />
+                                                        </div>
+                                                        <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-2xl shadow-lg flex items-center justify-center border border-gray-100">
+                                                            <ImageIcon className="w-4 h-4 text-gray-300" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 space-y-4">
+                                                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
+                                                            <input className="text-2xl font-serif italic font-medium bg-transparent outline-none w-full text-gray-900" value={member.name} onChange={(e) => {
+                                                                const s = [...site.staff]; s[i].name = e.target.value;
+                                                                setLocalSites({...localSites, [currentSiteId]: {...site, staff: s}});
+                                                            }} />
+                                                            <input className="text-[10px] font-bold uppercase tracking-widest text-[#5A5A40] bg-transparent outline-none whitespace-nowrap opacity-60" value={member.role} onChange={(e) => {
+                                                                const s = [...site.staff]; s[i].role = e.target.value;
+                                                                setLocalSites({...localSites, [currentSiteId]: {...site, staff: s}});
+                                                            }} />
+                                                        </div>
+                                                        <textarea className="w-full text-xs text-gray-500 leading-relaxed bg-transparent outline-none min-h-[60px] italic" value={member.bio} onChange={(e) => {
+                                                            const s = [...site.staff]; s[i].bio = e.target.value;
+                                                            setLocalSites({...localSites, [currentSiteId]: {...site, staff: s}});
+                                                        }} />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* PHOTOS */}
+                                {activeSection === 'photos' && (
+                                    <div className="bg-white p-12 rounded-[3.5rem] border border-[#E5E2D9] shadow-sm space-y-10">
+                                        <div className="flex items-center gap-4 border-b border-gray-100 pb-8">
+                                            <div className="w-12 h-12 bg-[#F9F8F3] rounded-2xl flex items-center justify-center text-[#5A5A40]"><Image className="w-6 h-6" /></div>
+                                            <h3 className="text-2xl font-serif italic">Gallery Assets</h3>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                            {site.photos.map((photo, i) => (
+                                                <div key={i} className="group space-y-5">
+                                                    <div className="relative rounded-[2.5rem] overflow-hidden border-8 border-white shadow-xl aspect-video transition-all group-hover:shadow-2xl">
+                                                        <img src={photo.url} className="w-full h-full object-cover grayscale-[0.4] group-hover:grayscale-0 transition-all duration-700" />
+                                                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button className="w-8 h-8 bg-white/90 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-400 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="px-4 space-y-2">
+                                                        <input className="w-full font-serif italic text-lg bg-transparent outline-none text-gray-900" value={photo.caption} onChange={(e) => {
+                                                            const p = [...site.photos]; p[i].caption = e.target.value;
+                                                            setLocalSites({...localSites, [currentSiteId]: {...site, photos: p}});
+                                                        }} />
+                                                        <input className="w-full text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-transparent outline-none" value={photo.category} onChange={(e) => {
+                                                            const p = [...site.photos]; p[i].category = e.target.value;
+                                                            setLocalSites({...localSites, [currentSiteId]: {...site, photos: p}});
+                                                        }} />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <button className="aspect-video rounded-[2.5rem] border-4 border-dashed border-[#E5E2D9] flex flex-col items-center justify-center gap-4 text-[#A5A299] hover:bg-white hover:text-[#5A5A40] hover:border-[#5A5A40]/30 transition-all">
+                                                <Plus className="w-8 h-8" />
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">Upload Asset</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* CONTACT */}
+                                {activeSection === 'contact' && (
+                                    <div className="bg-white p-12 rounded-[3.5rem] border border-[#E5E2D9] shadow-sm space-y-12">
+                                        <div className="flex items-center gap-4 border-b border-gray-100 pb-8">
+                                            <div className="w-12 h-12 bg-[#F9F8F3] rounded-2xl flex items-center justify-center text-[#5A5A40]"><Phone className="w-6 h-6" /></div>
+                                            <h3 className="text-2xl font-serif italic">Contact & Availability</h3>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                            <div className="md:col-span-2 space-y-10">
+                                                <div className="bg-[#FAF9F6] p-8 rounded-[2.5rem] border border-[#EBE9E0]">
+                                                    <label className="text-[10px] font-bold text-[#A5A299] uppercase tracking-widest block mb-4">Current Operating Hours</label>
+                                                    <input className="w-full text-2xl font-serif italic text-gray-900 bg-transparent outline-none placeholder:text-gray-200" value={site.contact.hours} onChange={(e) => setLocalSites({...localSites, [currentSiteId]: {...site, contact: {...site.contact, hours: e.target.value}}})} />
+                                                </div>
+                                            </div>
+                                            <InputGroup label="Main Office Line" value={site.contact.phone} onChange={(val) => setLocalSites({...localSites, [currentSiteId]: {...site, contact: {...site.contact, phone: val}}})} />
+                                            <InputGroup label="Inquiry Email" value={site.contact.email} onChange={(val) => setLocalSites({...localSites, [currentSiteId]: {...site, contact: {...site.contact, email: val}}})} />
+                                            <div className="md:col-span-2">
+                                                <InputGroup label="Physical Office Address" textarea value={site.contact.address} onChange={(val) => setLocalSites({...localSites, [currentSiteId]: {...site, contact: {...site.contact, address: val}}})} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </main>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

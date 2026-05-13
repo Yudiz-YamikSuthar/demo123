@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montessori Multisite CMS - Ultimate Standalone</title>
+    
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Core Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <!-- Use the full Lucide library for browser -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FAF9F6; margin: 0; padding: 0; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .card-shadow { box-shadow: 0 20px 50px -12px rgba(0,0,0,0.04); }
+        
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E2D9; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #A5A299; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="text-gray-900 selection:bg-[#5A5A40] selection:text-white overflow-x-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- CONSTANTS & INITIAL DATA ---
+        const SITES = {
+            brightonview: {
+                id: "brightonview",
+                name: "Brighton View Montessori",
+                colors: { primary: "#30AADD" },
+                homepage: {
+                    heroTitle: "A Natural Way to Learn",
+                    welcomeText: "Located in the heart of our community, Brighton View offers a serene and engaging environment for children to thrive.",
+                    imageUrl: "https://images.unsplash.com/photo-1540479859555-17af430c0b40?auto=format&fit=crop&q=80&w=1200"
+                }
+            },
+            parkview: {
+                id: "parkview",
+                name: "Parkview Montessori",
+                colors: { primary: "#5A5A40" },
+                homepage: {
+                    heroTitle: "Inspiring Future Leaders",
+                    welcomeText: "Parkview Montessori provides a modern, bright facility right next to the park, emphasizing nature-based learning.",
+                    imageUrl: "https://images.unsplash.com/photo-1502086223501-7ea2442d42df?auto=format&fit=crop&q=80&w=1200"
+                }
+            },
+            cedarwood: {
+                id: "cedarwood",
+                name: "Cedar Wood Academy",
+                colors: { primary: "#E97451" },
+                homepage: {
+                    heroTitle: "Nurturing Growth Naturally",
+                    welcomeText: "Cedar Wood offers a rich curriculum focused on arts and sciences within a Montessori framework.",
+                    imageUrl: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=1200"
+                }
+            }
+        };
+
+        const SHARED_CONTENT = {
+            philosophy: {
+                title: "Philosophy & Method",
+                mission: "To inspire human potential and nurture a lifelong love of learning within an inclusive, diverse community.",
+                content: "Our approach honors each child's unique journey. Dr. Maria Montessori believed that children learn best in an environment prepared with beauty and order. We focus on independence, respect for one's self and others, and a connection to the natural world."
+            },
+            programs: [
+                { title: "Infant & Toddler", subtitle: "Ages 18 months - 3 years", description: "A gentle introduction to the Montessori environment." },
+                { title: "Primary", subtitle: "Ages 3 - 6 years", description: "The iconic multi-age classroom focused on hands-on discovery." },
+                { title: "Elementary", subtitle: "Ages 6 - 12 years", description: "Expanding horizons through cosmic education." }
+            ],
+            admissions: {
+                steps: [
+                    { title: "Observe", text: "Schedule a visit to see our classrooms in action." },
+                    { title: "Apply", text: "Submit your application form and enrollment fee." },
+                    { title: "Meeting", text: "A conversation between our guides and your family." }
+                ]
+            }
+        };
+
+        // --- COMPONENTS ---
+
+        const LucideIcon = ({ name, size = 18, className = "" }) => {
+            const iconRef = useRef(null);
+
+            useEffect(() => {
+                if (iconRef.current && window.lucide) {
+                    window.lucide.createIcons({
+                        attrs: {
+                            class: className,
+                            'stroke-width': 2,
+                        },
+                        nameAttr: 'data-lucide'
+                    });
+                }
+            }, [name, className]);
+
+            return <i 
+                ref={iconRef}
+                key={name}
+                data-lucide={name} 
+                style={{ width: size, height: size, display: 'inline-block' }}
+                className={className}
+            ></i>;
+        };
+
+        function App() {
+            const [currentSiteId, setSiteId] = useState('brightonview');
+            const [activeSection, setActiveSection] = useState('philosophy');
+            const [saveStatus, setSaveStatus] = useState(null);
+            const [showSwitcher, setShowSwitcher] = useState(false);
+
+            const site = SITES[currentSiteId];
+
+            const handleSync = () => {
+                setSaveStatus('Syncing with Global Network...');
+                setTimeout(() => setSaveStatus('Changes synchronized across all campuses!'), 1500);
+                setTimeout(() => setSaveStatus(null), 4000);
+            };
+
+            const NavButton = ({ id, icon, label }) => {
+                const isActive = activeSection === id;
+                return (
+                    <button 
+                        onClick={() => setActiveSection(id)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 group ${
+                            isActive ? 'text-white shadow-lg' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
+                        }`}
+                        style={isActive ? { backgroundColor: site.colors.primary, boxShadow: `0 10px 20px -5px ${site.colors.primary}40` } : {}}
+                    >
+                        <LucideIcon name={icon} size={16} className={isActive ? 'text-white' : 'group-hover:text-gray-900'} />
+                        <span className="truncate">{label}</span>
+                    </button>
+                );
+            };
+
+            return (
+                <div className="min-h-screen flex text-gray-900 bg-[#FAF9F6]">
+                    {/* SIDEBAR */}
+                    <aside className="hidden md:flex w-64 bg-white border-r border-[#E5E2D9] py-8 px-5 flex-col fixed h-screen z-30 overflow-hidden">
+                        <div className="mb-10 px-3">
+                            <div className="flex items-center gap-2 mb-1">
+                                <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: site.colors.primary }}></div>
+                                <h1 className="font-black text-[10px] uppercase tracking-[0.3em] text-gray-900">Montessori</h1>
+                            </div>
+                            <p className="text-[9px] font-bold text-[#A5A299] uppercase tracking-[0.15em]">Management Portal</p>
+                        </div>
+
+                        <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1">
+                            <div className="mb-6">
+                                <p className="px-4 text-[9px] font-black uppercase text-[#A5A299] tracking-[0.2em] mb-3">Network Global</p>
+                                <NavButton id="philosophy" icon="sparkles" label="Philosophy" />
+                                <NavButton id="programs" icon="graduation-cap" label="Programs" />
+                                <NavButton id="admissions" icon="calendar" label="Admissions" />
+                                <NavButton id="careers" icon="briefcase" label="Careers" />
+                            </div>
+                            
+                            <div className="h-px bg-[#F0EEE6] my-6 mx-4"></div>
+                            
+                            <div className="mb-6">
+                                <p className="px-4 text-[9px] font-black uppercase text-[#A5A299] tracking-[0.2em] mb-3">Campus Local</p>
+                                <NavButton id="homepage" icon="layout" label="Hero Setup" />
+                                <NavButton id="staff" icon="users" label="Our Guides" />
+                                <NavButton id="contact" icon="phone" label="Contact Details" />
+                            </div>
+                        </nav>
+
+                        <div className="mt-8 pt-6 border-t border-[#F0EEE6]">
+                            <div className="p-4 bg-[#F9F8F3] rounded-2xl border border-[#EBE9E0]">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                    <p className="text-[9px] font-black text-[#5A5A40] uppercase tracking-wider">System Online</p>
+                                </div>
+                                <p className="text-[10px] text-gray-400 font-medium leading-tight">Version 4.2.1 Stable Build Established.</p>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* MAIN AREA */}
+                    <main className="flex-1 md:ml-64 min-h-screen relative overflow-x-hidden">
+                        {/* HEADER */}
+                        <header className="fixed top-0 md:left-64 left-0 right-0 h-20 bg-white/70 backdrop-blur-xl border-b border-[#E5E2D9] px-6 md:px-10 flex items-center justify-between z-20">
+                            <div className="relative">
+                                <button 
+                                    onClick={() => setShowSwitcher(!showSwitcher)}
+                                    className="flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 rounded-xl transition-all font-bold text-sm text-gray-700 border border-transparent hover:border-[#E5E2D9]"
+                                >
+                                    <LucideIcon name="map-pin" size={14} style={{ color: site.colors.primary }} />
+                                    <span className="hidden sm:inline">{site.name}</span>
+                                    <span className="sm:hidden">{site.name.split(' ')[0]}</span>
+                                    <LucideIcon name="chevron-down" size={14} className={`transition-transform duration-300 opacity-40 ${showSwitcher ? 'rotate-180' : ''}`} />
+                                </button>
+                                
+                                {showSwitcher && (
+                                    <div className="absolute top-full left-0 mt-3 w-72 bg-white border border-[#E5E2D9] rounded-3xl shadow-2xl p-2 z-50 animate-fade-in border border-[#E5E2D9]">
+                                        {Object.values(SITES).map(s => (
+                                            <button 
+                                                key={s.id}
+                                                onClick={() => { setSiteId(s.id); setShowSwitcher(false); }}
+                                                className={`w-full text-left px-4 py-3 rounded-2xl text-sm font-semibold transition-all mb-1 last:mb-0 ${
+                                                    currentSiteId === s.id ? 'bg-[#F9F8F3] text-[#5A5A40] font-bold' : 'hover:bg-gray-50 text-gray-500'
+                                                }`}
+                                            >
+                                                {s.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                                <div className="hidden lg:flex items-center gap-6 mr-6">
+                                    <button className="text-[10px] font-black uppercase text-[#A5A299] tracking-widest hover:text-gray-900 transition-colors">Documentation</button>
+                                    <button className="text-[10px] font-black uppercase text-[#A5A299] tracking-widest hover:text-gray-900 transition-colors">Support</button>
+                                </div>
+                                <button 
+                                    onClick={handleSync}
+                                    className="px-6 md:px-8 py-3 rounded-full text-[10px] font-black text-white hover:scale-105 transition-all shadow-xl flex items-center gap-2.5 active:scale-95"
+                                    style={{ backgroundColor: site.colors.primary, boxShadow: `0 10px 25px -5px ${site.colors.primary}50` }}
+                                >
+                                    <LucideIcon name="refresh-cw" size={12} className="animate-spin-slow" />
+                                    <span className="hidden sm:inline">SYNC NETWORK</span>
+                                    <span className="sm:hidden">SYNC</span>
+                                </button>
+                            </div>
+                        </header>
+
+                        {/* CONTENT AREA */}
+                        <div className="pt-32 pb-24 px-6 md:px-12 max-w-5xl mx-auto">
+                            <div className="mb-14">
+                                <div className="flex items-center gap-2 text-[10px] font-black text-[#A5A299] uppercase tracking-[0.4em] mb-4">
+                                    <LucideIcon name="layers" size={10} />
+                                    {['philosophy', 'programs', 'admissions', 'careers'].includes(activeSection) 
+                                        ? <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-blue-400"></span>Global Network Hub</span> 
+                                        : <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-orange-400"></span>Local Campus Override</span>
+                                    }
+                                </div>
+                                <h1 className="text-5xl md:text-7xl font-serif italic text-gray-900 capitalize tracking-tight leading-tight">{activeSection}</h1>
+                            </div>
+
+                            {saveStatus && (
+                                <div className="mb-10 p-5 bg-white border border-green-100 rounded-3xl flex items-center gap-4 text-green-700 font-bold text-xs card-shadow animate-fade-in ring-2 ring-green-50">
+                                    <div className="w-8 h-8 bg-green-50 rounded-full flex items-center justify-center">
+                                        <LucideIcon name="check" size={16} />
+                                    </div>
+                                    {saveStatus}
+                                </div>
+                            )}
+
+                            <div className="bg-white p-8 md:p-14 rounded-[3rem] md:rounded-[4.5rem] card-shadow border border-[#E5E2D9] space-y-10 animate-fade-in relative overflow-hidden">
+                                {activeSection === 'philosophy' && (
+                                    <div className="space-y-10">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <label className="block text-[10px] font-black uppercase text-[#A5A299] tracking-widest ml-1">Universal Heading</label>
+                                                <span className="text-[9px] font-bold text-[#A5A299] bg-[#FAF9F6] px-2 py-0.5 rounded">ID: GLOBAL_HEAD</span>
+                                            </div>
+                                            <input 
+                                                className="w-full text-2xl md:text-4xl font-serif italic bg-[#FAF9F6] border border-[#EBE9E0] rounded-[2rem] md:rounded-[2.5rem] px-8 md:px-10 py-6 md:py-8 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-[#5A5A40]/5"
+                                                defaultValue={SHARED_CONTENT.philosophy.title}
+                                            />
+                                        </div>
+                                        <div className="space-y-4">
+                                             <div className="flex items-center justify-between">
+                                                <label className="block text-[10px] font-black uppercase text-[#A5A299] tracking-widest ml-1">Global Narrative Outline</label>
+                                                <span className="text-[9px] font-bold text-[#A5A299] bg-[#FAF9F6] px-2 py-0.5 rounded">MAX 500 CHARS</span>
+                                            </div>
+                                            <textarea 
+                                                rows="6"
+                                                className="w-full text-lg md:text-xl leading-relaxed text-gray-600 bg-[#FAF9F6] border border-[#EBE9E0] rounded-[2rem] md:rounded-[2.5rem] px-8 md:px-10 py-6 md:py-8 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-[#5A5A40]/5"
+                                                defaultValue={SHARED_CONTENT.philosophy.content}
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+                                            {['Prepared Environment', 'Multi-Age Group', 'Hands-on Learning'].map(pillar => (
+                                                <div key={pillar} className="p-6 bg-[#FAF9F6] rounded-3xl border border-[#EBE9E0] hover:border-[#5A5A40] transition-colors group cursor-pointer">
+                                                    <div className="w-10 h-10 rounded-2xl bg-white border border-[#EBE9E0] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                                        <LucideIcon name="bookmark" size={18} className="text-gray-400 group-hover:text-gray-900" />
+                                                    </div>
+                                                    <h4 className="font-bold text-sm text-gray-900 mb-1">{pillar}</h4>
+                                                    <p className="text-[11px] text-gray-500 font-medium">Core Montessori Principle</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeSection === 'homepage' && (
+                                    <div className="space-y-10">
+                                        <div className="relative group overflow-hidden rounded-[3rem] border-8 border-[#FAF9F6] shadow-inner">
+                                            <img src={site.homepage.imageUrl} className="w-full h-64 md:h-96 object-cover grayscale-[0.2] transition-all duration-700 group-hover:scale-105 group-hover:grayscale-0" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center backdrop-blur-sm">
+                                                <p className="text-white text-[10px] font-black uppercase tracking-[0.3em] mb-4">Campus Visual Identity</p>
+                                                <button className="px-10 py-4 bg-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-2xl hover:scale-110 duration-300 transition-transform">Replace Campus Hero</button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <label className="block text-[10px] font-black uppercase text-[#A5A299] tracking-widest ml-1">Landing Headline (Local Override)</label>
+                                                <span className="text-[9px] font-bold text-[#A5A299] bg-[#FAF9F6] px-2 py-0.5 rounded">CAMPUS SPECIFIC</span>
+                                            </div>
+                                            <input 
+                                                className="w-full text-2xl md:text-4xl font-serif italic bg-[#FAF9F6] border border-[#EBE9E0] rounded-[2rem] md:rounded-[2.5rem] px-8 md:px-10 py-6 md:py-8 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-[#5A5A40]/5"
+                                                defaultValue={site.homepage.heroTitle}
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="space-y-4">
+                                                <label className="block text-[10px] font-black uppercase text-[#A5A299] tracking-widest ml-1">Description</label>
+                                                <textarea rows="4" className="w-full text-sm font-medium text-gray-500 bg-[#FAF9F6] border border-[#EBE9E0] rounded-3xl p-6 outline-none" defaultValue={site.homepage.welcomeText} />
+                                            </div>
+                                            <div className="bg-[#FAF9F6] rounded-[2rem] p-8 border border-[#EBE9E0] border-dashed flex flex-col items-center justify-center text-center">
+                                                <LucideIcon name="plus" size={24} className="mb-4 text-gray-300" />
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Add Custom Module</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {['programs', 'admissions', 'staff', 'contact', 'careers'].includes(activeSection) && (
+                                    <div className="py-24 text-center space-y-6">
+                                        <div className="w-24 h-24 bg-[#FAF9F6] rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 border border-[#EBE9E0] relative">
+                                            <div className="absolute inset-0 border-2 border-dashed border-gray-200 rounded-[2.5rem] animate-spin-slow"></div>
+                                            <LucideIcon name="cog" size={36} className="text-[#A5A299]" />
+                                        </div>
+                                        <h3 className="text-3xl font-serif italic text-gray-900 tracking-tight">Expansion Module Ready</h3>
+                                        <p className="text-gray-400 text-sm max-w-sm mx-auto font-medium leading-relaxed">
+                                            This section uses regional schemas. Data schemas have been validated for the <span className="font-bold text-gray-500">{site.name}</span> context.
+                                        </p>
+                                        <div className="pt-6">
+                                            <button className="px-8 py-3 bg-[#FAF9F6] border border-[#EBE9E0] rounded-full text-[10px] font-black uppercase text-gray-400 tracking-widest hover:bg-white hover:text-gray-600 transition-all">Initialize Content Layout</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

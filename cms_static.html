@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montessori Multisite CMS - Static Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .bg-soft { background-color: #FAF9F6; }
+    </style>
+</head>
+<body class="bg-soft text-gray-900">
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect } = React;
+        const { motion, AnimatePresence } = FramerMotion;
+
+        const SHARED_CONTENT = {
+            programs: [
+                { title: "Infant & Toddler", subtitle: "Ages 18 months - 3 years", content: "A nurturing environment for the smallest explorers...", icon: "Heart" },
+                { title: "Primary (3-6 Years)", subtitle: "The Iconic Montessori Classroom", content: "Children develop concentration, coordination...", icon: "GraduationCap" }
+            ],
+            philosophy: {
+                title: "Philosophy & Method",
+                mission: "To inspire human potential and nurture a lifelong love of learning...",
+                content: "Our approach honors each child's unique journey...",
+                coreValues: [
+                    { title: "Respect", desc: "For oneself, others, and the environment." },
+                    { title: "Independence", desc: "Encouraging children to 'do it themselves'." }
+                ],
+                pillars: [
+                    { title: "Prepared Environment", desc: "Classrooms designed for the child." },
+                    { title: "Multi-Age Play", desc: "Learning from peers." }
+                ]
+            }
+        };
+
+        const SITES = {
+            brightonview: {
+                name: "Brighton View Montessori",
+                colors: { primary: "#30AADD" }
+            },
+            parkview: {
+                name: "Parkview Montessori",
+                colors: { primary: "#5A5A40" }
+            }
+        };
+
+        function App() {
+            const [activeSection, setActiveSection] = useState('philosophy');
+            const [currentSiteId, setSiteId] = useState('brightonview');
+            const [saveStatus, setSaveStatus] = useState(null);
+
+            const handleSave = () => {
+                setSaveStatus('Saving to Network...');
+                setTimeout(() => setSaveStatus('All changes synced!'), 1500);
+                setTimeout(() => setSaveStatus(null), 4000);
+            };
+
+            return React.createElement('div', { className: 'min-h-screen bg-soft flex' },
+                // Sidebar
+                React.createElement('aside', { className: 'w-64 bg-white border-r border-gray-200 p-6 flex flex-col h-screen fixed' },
+                    React.createElement('div', { className: 'mb-10 px-2' },
+                        React.createElement('h2', { className: 'font-bold text-gray-900 text-sm uppercase tracking-tight' }, 'Montessori'),
+                        React.createElement('p', { className: 'text-[10px] uppercase font-bold text-gray-400 tracking-widest' }, 'Network Admin')
+                    ),
+                    React.createElement('nav', { className: 'space-y-1' },
+                        ['Programs', 'Philosophy', 'Admissions'].map(item => 
+                            React.createElement('button', {
+                                key: item,
+                                onClick: () => setActiveSection(item.toLowerCase()),
+                                className: `w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeSection === item.toLowerCase() ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`
+                            }, item)
+                        )
+                    )
+                ),
+                // Main
+                React.createElement('main', { className: 'ml-64 flex-1 p-12' },
+                    React.createElement('header', { className: 'flex justify-between items-center mb-12' },
+                        React.createElement('div', null,
+                            React.createElement('p', { className: 'text-[10px] font-extrabold text-[#5A5A40] uppercase tracking-widest mb-2' }, 'Global Network Controller'),
+                            React.createElement('h1', { className: 'text-5xl font-serif italic text-gray-900 capitalize' }, activeSection)
+                        ),
+                        React.createElement('div', { className: 'flex items-center gap-4' },
+                            saveStatus && React.createElement('span', { className: 'text-xs font-bold text-green-600' }, saveStatus),
+                            React.createElement('button', {
+                                onClick: handleSave,
+                                className: 'bg-[#5A5A40] text-white px-8 py-3 rounded-full font-bold shadow-xl hover:scale-105 transition-all'
+                            }, 'Sync All Sites')
+                        )
+                    ),
+                    React.createElement('div', { className: 'bg-white p-10 rounded-[2.5rem] border border-gray-200 shadow-sm' },
+                        React.createElement('h3', { className: 'text-2xl font-serif italic mb-6' }, 'Content Manager'),
+                        React.createElement('div', { className: 'space-y-6' },
+                            React.createElement('div', null,
+                                React.createElement('label', { className: 'block text-[10px] font-bold uppercase text-gray-400 mb-2' }, 'Global Headline'),
+                                React.createElement('input', { 
+                                    className: 'w-full text-xl font-serif italic bg-soft border border-gray-100 rounded-2xl px-6 py-4 outline-none',
+                                    defaultValue: SHARED_CONTENT.philosophy.title
+                                })
+                            ),
+                            React.createElement('div', null,
+                                React.createElement('label', { className: 'block text-[10px] font-bold uppercase text-gray-400 mb-2' }, 'Narrative Content'),
+                                React.createElement('textarea', { 
+                                    rows: 4,
+                                    className: 'w-full text-gray-600 bg-soft border border-gray-100 rounded-2xl px-6 py-4 outline-none',
+                                    defaultValue: SHARED_CONTENT.philosophy.content
+                                })
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
